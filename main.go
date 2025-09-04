@@ -9,7 +9,7 @@ import (
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*config) error
+	callback    func(*config, []string) error
 }
 
 type config struct {
@@ -29,9 +29,7 @@ func main() {
 	table["help"] = cliCommand{
 		name:        "help",
 		description: "Displays a help message",
-		callback: func(c *config) error {
-			return commandHelp(c)
-		},
+		callback: commandHelp,
 	}
 
 	table["exit"] = cliCommand{
@@ -51,6 +49,12 @@ func main() {
         description: "Displays the previous 20 location areas",
         callback: commandMapBack,
     }
+
+	table["explore"] = cliCommand{
+		name: "explore",
+		description: "Explore a specific location area",
+		callback: commandExplore,
+	}
 
 	StartREPL(cfg)
 }

@@ -17,7 +17,8 @@ func StartREPL(cfg *config) {
                 words := cleanInput(command)
                 cmd, ok := table[words[0]]
                 if ok {
-                    err := cmd.callback(cfg)
+                    args := words[1:]
+                    err := cmd.callback(cfg, args)
                     if err != nil {
                         fmt.Println("Error:", err)
                     }
