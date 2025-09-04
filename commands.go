@@ -40,21 +40,30 @@ func commandMap(c *config) error{
 		return nil
 	}
 
-	res, err := http.Get(c.next)
-	if err != nil {
-		return err
-	}
+	var body []byte
+	var err error
 
-	defer res.Body.Close()
+	if data, ok := c.cache.Get(c.next); ok {
+		fmt.Println("Using cached data")
+		body = data
+	} else {
+		res, err := http.Get(c.next)
+		if err != nil {
+			return err
+		}
+		defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return err
+		body, err = io.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+		
+		c.cache.Add(c.next, body)
 	}
 
 	var data LocationAreaResponse
 	err = json.Unmarshal(body, &data)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 

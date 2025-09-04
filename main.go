@@ -1,5 +1,11 @@
 package main
 
+import (
+	"time"
+
+	"github.com/mecebeci/pokedexcli/internal/pokecache"
+)
+
 type cliCommand struct {
 	name        string
 	description string
@@ -9,6 +15,7 @@ type cliCommand struct {
 type config struct {
 	next     string
 	previous string
+	cache *pokecache.Cache
 }
 
 var table = map[string]cliCommand{}
@@ -16,6 +23,7 @@ var table = map[string]cliCommand{}
 func main() {
 	cfg := &config{
 		next: "https://pokeapi.co/api/v2/location-area/",
+		cache: pokecache.NewCache(5 * time.Second),
 	}
 
 	table["help"] = cliCommand{
