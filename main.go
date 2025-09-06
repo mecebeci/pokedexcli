@@ -16,6 +16,7 @@ type config struct {
 	next     string
 	previous string
 	cache *pokecache.Cache
+	pokedex map[string]Pokemon
 }
 
 var table = map[string]cliCommand{}
@@ -24,6 +25,7 @@ func main() {
 	cfg := &config{
 		next: "https://pokeapi.co/api/v2/location-area/",
 		cache: pokecache.NewCache(5 * time.Second),
+		pokedex: make(map[string]Pokemon),
 	}
 
 	table["help"] = cliCommand{
@@ -54,6 +56,12 @@ func main() {
 		name: "explore",
 		description: "Explore a specific location area",
 		callback: commandExplore,
+	}
+
+	table["catch"] = cliCommand{
+		name: "catch",
+		description: "Catch a specific pokemon",
+		callback: commandCatch,
 	}
 
 	StartREPL(cfg)

@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
+	"time"
 )
 
 type LocationAreaResponse struct {
@@ -28,6 +30,12 @@ type Location struct {
 	} `json:"pokemon_encounters"`
 }
 
+type Pokemon struct {
+	Id int32 `json:"id"`
+	Name string `json:"name"`
+	BaseExperience int32 `json:"base_experience"`
+}
+
 
 func commandHelp(c *config, args []string) error {
 	fmt.Println("Available commands:")
@@ -44,81 +52,14 @@ func commandExit(c *config, args []string) error{
 	return nil
 }
 
-func commandMap(c *config, args []string) error{
-	if c.next == ""{
-		fmt.Println("No more locations")
-		return nil
-	}
-
-	var body []byte
-	var err error
-
-	if data, ok := c.cache.Get(c.next); ok {
-		fmt.Println("Using cached data")
-		body = data
-	} else {
-		res, err := http.Get(c.next)
-		if err != nil {
-			return err
-		}
-		defer res.Body.Close()
-
-		body, err = io.ReadAll(res.Body)
-		if err != nil {
-			return err
-		}
-		
-		c.cache.Add(c.next, body)
-	}
-
-	var data LocationAreaResponse
-	err = json.Unmarshal(body, &data)
-	if err != nil {
-		return err
-	}
-
-	for _, area := range data.Results{
-		fmt.Println(area.Name)
-	}
-
-	c.next = data.Next
-	c.previous = data.Previous
-
-	return nil
+func commandMap(c *config, args []string) error {
+	return fetchAndPrintLocations(c, c.next)
 }
 
 func commandMapBack(c *config, args []string) error {
-	if c.previous == ""{
-		fmt.Println("No more locations")
-		return nil
-	}
-
-	res, err := http.Get(c.previous)
-	if err != nil {
-		return err
-	}
-
-	defer res.Body.Close()
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return err
-	}
-
-	var data LocationAreaResponse
-	err = json.Unmarshal(body, &data)
-	if err != nil {
-		return err
-	}
-
-	for _, area := range data.Results{
-		fmt.Println(area.Name)
-	}
-
-	c.next = data.Next
-	c.previous = data.Previous
-	return nil
+	return fetchAndPrintLocations(c, c.previous)
 }
+
 
 func commandExplore(c *config, args []string) error {
 	if len(args) < 1{
@@ -158,4 +99,89 @@ func commandExplore(c *config, args []string) error {
         fmt.Printf("- %s\n", p.Pokemon.Name)
     }
     return nil
+}
+
+func commandCatch(c *config, args []string) error{
+	if len(args) < 1 {
+		fmt.Println("Please provide a Pokemon name")
+		return nil
+	}
+
+	name := args[0]
+
+	url := fmt.Sprintf("https://pokeapi.co/api/v2/pokemon/%s", name)
+
+	res, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+
+	var p Pokemon
+	err = json.Unmarshal(body, &p)
+	if err != nil {
+		return err
+	}
+
+	src := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(src)
+
+	chance := r.Intn(int(p.BaseExperience) + 50)
+	fmt.Printf("Throwing a Pokeball at %s...\n", p.Name)
+	if chance < 50 {
+		fmt.Printf("%s was caught!\n", p.Name)
+		c.pokedex[p.Name] = p
+	} else {
+		fmt.Printf("%s escaped!\n", p.Name)
+	}
+	return nil
+}
+
+func fetchAndPrintLocations(c *config, url string) error {
+	if url == "" {
+		fmt.Println("No more locations")
+		return nil
+	}
+
+	var body []byte
+	var err error
+
+	if data, ok := c.cache.Get(url); ok {
+		fmt.Println("Using cached data")
+		body = data
+	} else {
+		res, err := http.Get(url)
+		if err != nil {
+			return err
+		}
+		defer res.Body.Close()
+
+		body, err = io.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+
+		c.cache.Add(url, body)
+	}
+
+	var data LocationAreaResponse
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		return err
+	}
+
+	for _, area := range data.Results {
+		fmt.Println(area.Name)
+	}
+
+	c.next = data.Next
+	c.previous = data.Previous
+
+	return nil
 }
