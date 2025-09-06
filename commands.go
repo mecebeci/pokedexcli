@@ -186,6 +186,16 @@ func commandInspect(c *config, args []string) error {
 	return nil
 }
 
+func commandPokedex(c *config, args []string) error {
+	if len(c.pokedex) == 0 {
+		return fmt.Errorf("you have not caught any pokemon")
+	}
+	for _, p := range c.pokedex {
+		fmt.Printf("- %s\n", p.Name)
+	}
+	return nil
+}
+
 func fetchAndPrintLocations(c *config, url string) error {
 	if url == "" {
 		fmt.Println("No more locations")
