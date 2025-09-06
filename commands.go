@@ -31,11 +31,25 @@ type Location struct {
 }
 
 type Pokemon struct {
-	Id int32 `json:"id"`
+	ID int32 `json:"id"`
 	Name string `json:"name"`
 	BaseExperience int32 `json:"base_experience"`
+	Height int32 `json:"height"`
+	Weight int32 `json:"weight"`
+	Stats []struct{
+		BaseStat int32 `json:"base_stat"`
+		Stat struct{
+			Name string `json:"name"`
+		} `json:"stat"`
+	} `json:"stats"`
+	Types []struct{
+		Slot int `json:"slot"`
+		Type struct{
+			Name string `json:"name"`
+			URL string `json:"url"`
+		} `json:"type"`
+	} `json:"types"`
 }
-
 
 func commandHelp(c *config, args []string) error {
 	fmt.Println("Available commands:")
@@ -140,6 +154,35 @@ func commandCatch(c *config, args []string) error{
 	} else {
 		fmt.Printf("%s escaped!\n", p.Name)
 	}
+	return nil
+}
+
+func commandInspect(c *config, args []string) error {
+	if len(args) < 1 {
+		fmt.Println("Please specify a Pokemon name")
+		return nil
+	}
+
+	name := args[0]
+	p, ok := c.pokedex[name]
+	if !ok {
+		fmt.Printf("you have not caught that pokemon\n")
+		return nil
+	}
+
+	fmt.Printf("Name: %s\n", p.Name)
+	fmt.Printf("Height: %d\n", p.Height)
+	fmt.Printf("Weight: %d\n", p.Weight)
+	fmt.Println("Stats:")
+	for _, s := range p.Stats {
+		fmt.Printf("  -%s: %d\n", s.Stat.Name, s.BaseStat)
+	}
+
+	fmt.Println("Types:")
+	for _, t := range p.Types {
+		fmt.Printf("  - %s\n", t.Type.Name)
+	}
+
 	return nil
 }
 

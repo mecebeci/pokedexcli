@@ -64,5 +64,11 @@ func main() {
 		callback: commandCatch,
 	}
 
+	table["inspect"] = cliCommand{
+		name: "inspect",
+		description: "Inspect a specific pokemon",
+		callback: commandInspect,
+	}
+
 	StartREPL(cfg)
 }
